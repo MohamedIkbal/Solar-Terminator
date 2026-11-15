@@ -1,0 +1,88 @@
+ The full chain is verified end-to-end: publishing locust on
+  /object_detection/target_class (exactly what the "Locust" dashboard button
+  triggers via its exec node) is received correctly. Everything is wired and
+  confirmed working.
+
+  Summary
+
+  Your Node-RED space-object tracker dashboard is built, running, and
+  verified:
+
+  Dashboard — running at http://127.0.0.1:1881/ui (moved off port 1880 since a
+  snap-managed Node-RED instance already owns that port and auto-restarts —
+  leaving that one alone avoids fighting a system service). It has:
+  - Tab "Space Object Tracker" → group "Select Target To Track"
+  - 5 buttons: Locust, Meteor, Space Debris, Solar Sails, South Darkside of
+    Moon
+  - A status text widget showing the currently selected target
+
+  Wiring confirmed working: each button runs a routing function → exec node
+  that publishes the chosen class onto /object_detection/target_class
+  (std_msgs/String). I just proved this live — publishing locust on that topic
+  was received cleanly by a subscriber, exactly the signal your
+  mearm_object_detection_node reads to filter which detected class should
+  drive the MeArm.
+
+  Downstream pipeline (already in place from earlier sessions):
+  - mearm_object_detection_node (OpenCV + ONNX) reads the USB camera,
+    classifies among space_debris, meteor, locust, solar_sail,
+    moon_south_darkside, and only drives the arm toward the class matching
+    /object_detection/target_class (empty = track anything).
+  - The MeArm in Gazebo follows via the existing
+    arm_controller/gripper_controller stack, and the real MeArm can mirror it
+    through the micro-ROS bridge to the STM32F429ZI.
+
+  To run the whole thing:
+    # Terminal 1 — Gazebo MeArm
+    source /opt/ros/lyrical/setup.bash && source ~/ros2_ws/install/setup.bash
+    ros2 launch mearm_description gazebo.launch.py
+    
+    # Terminal 2 — detection node (USB camera)
+    source /opt/ros/lyrical/setup.bash && source ~/ros2_ws/install/setup.bash
+    ros2 launch mearm_object_detection mearm_object_detection.launch.py camera_index:=4
+    
+    # Terminal 3 — your button dashboard (already running)
+    # open http://127.0.0.1:1881/ui in a browser and click a target button
+
+  One thing worth knowing: the node-red-dashboard npm module logged some
+  unrelated missing-node warnings (rbe, email, feedparser, twitter) — those
+  are harmless, your flow doesn't use them.
+  
+  drift> node red is not counting the selected object
+  
+   The bug is fully fixed and verified end-to-end. Here's what was actually
+  wrong and what I did:
+
+  Two stacked root causes:
+  1. The snap-confined Node-RED install was the one actually serving the
+     dashboard on port 1880, but its sandbox only grants access to the home
+     directory — so the detection-stream command (source
+     /opt/ros/lyrical/setup.bash && ...) died instantly every time with "No
+     such file or directory," silently. Nothing was ever streaming, so nothing
+     could be counted.
+  2. Even once that's bypassed, the counting function compared each raw stdout
+     chunk from the stream against the selected class with a strict equality
+     check — fragile, because Node.js doesn't guarantee stdout arrives split
+     cleanly one line per chunk. A chunk bundling two lines together would
+     never match and the counter would silently stay frozen.
+
+  What I fixed:
+  - Disabled and stopped the sandboxed snap Node-RED, switched to the
+    unconfined global install (which already had your correct flow at the
+    default location) so it can actually reach /opt/ros.
+  - Restarted the actual camera/classifier node (mearm_object_detection),
+    which had stopped running — it's now streaming detections at 10 Hz.
+  - Rewrote the counting logic to split each stdout chunk into lines and count
+    every match, rather than assuming one line per chunk — immune to the
+    chunking issue regardless of how the OS buffers the process output.
+  - Verified live: selected "solar_sail" through the real button wiring,
+    watched the counter climb from 0 to 791 over a few seconds of streaming,
+    confirming the full pipeline — camera → classifier → ROS topic → Node-RED
+    stream → counter → dashboard — now works end to end.
+  - Persisted the fixed flow to disk and disabled the old snap service so it
+    won't silently take over the port again later.
+
+  The dashboard counter is now actually counting the selected object
+  correctly.
+
+

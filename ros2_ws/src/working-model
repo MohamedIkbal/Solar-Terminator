@@ -1,0 +1,198 @@
+  To test it, first make sure the STM32 is flashed and plugged in via USB
+  (shows up as /dev/ttyACM0), then run:
+
+    cd /home/ikbal/ros2_ws
+    source /opt/ros/lyrical/setup.bash
+    colcon build --packages-select pca9685_multiple
+    source install/setup.bash
+    ros2 launch pca9685_multiple servo_serial_test.launch.py
+
+  This brings up the serial bridge node (which reads /arm_joint_commands and
+  writes J<n> <rad>\n lines to the STM32) plus a sweep test in one shot — you
+  should see all 4 servos move.
+
+  If you'd rather test pieces individually:
+    # just the bridge, then drive it manually
+    ros2 run pca9685_multiple servo_serial_bridge --ros-args -p port:=/dev/ttyACM0
+    
+    # center all servos
+    ros2 run pca9685_multiple servo_center
+    
+    # sweep all servos
+    ros2 run pca9685_multiple servo_sweep
+    
+    # send specific joint angles (radians, 0 = 90°)
+    ros2 run pca9685_multiple servo_commander --ros-args -p joint_values:="[0.5,-0.3,0.2,0.0]"
+
+  Note: this firmware is command-only — it won't publish joint states back, so
+  don't expect a /joint_states echo; watching the physical servos move is the
+  actual test.
+
+
+    # 1. just the bridge, then drive it manually
+    ros2 run pca9685_multiple servo_serial_bridge --ros-args -p port:=/dev/ttyACM0
+        
+    # 2. Launch object detection (adjust camera_index to your webcam)
+    ros2 launch mearm_object_detection mearm_object_detection.launch.py camera_index:=4
+    
+    # 3. Launch the real hardware bringup (after the servo bridge is confirmed via your serial test)
+
+    ros2 launch mearm_description display.launch.py use_mock_hardware:=false serial_port:=/dev/ttyACM0 start_rviz:=true
+
+To stop the servos right now (halt the MCU so the sweep stops; PCA9685 keeps the last PWM, so servos hold their position):
+
+
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c 'init; halt; shutdown'
+
+To resume the sweep later:
+
+
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c 'init; reset run; shutdown'
+
+What happened
+
+Your script stopped working because the firmware I flashed earlier was the sweep-only hardware test — it never read USART3, so J0 ... commands were ignored (you only got ERR: / no response).
+
+Fix applied
+
+I turned the firmware into a serial-command-controlled servo driver while keeping the PCA9685 init + I2C probe:
+
+PCA9685_HwTest_Loop() now polls USART3 for lines of the form J<n> <rad> and moves that servo:
+angle_deg = 90 + rad * 57.2958 (matches your (ang-90)/57.29578 radians).
+Replies with J0 0.00 deg etc. so your s.read(500) returns promptly.
+Enabled float support in newlib (-u _scanf_float -u _printf_float) so %f parse/print works on STM32.
+Verification with your exact script
+
+
+angle 0   -> J0..J3 -0.01 deg
+angle 90  -> J0..J3 90.00 deg
+angle 180 -> J0..J3 180.01 deg
+All 4 servos now respond to J0..J3. Project: /home/ikbal/pca9685-multiple. Rebuild/flash:
+
+  "Sweeping servos via direct serial bridge", and a grep for "micro" across
+  the whole run output turns up nothing. The serial bridge opened fine on
+  /dev/ttyACM0 @ 115200 too.
+
+  One separate thing worth knowing: ~/run_microros_agent.sh at your home
+  directory still exists and genuinely does run a micro-ROS XRCE agent — but
+  that's for a different, older firmware path (stm32_firmware_ready, which
+  still has real micro-ROS client code in micro_ros_app.c). That script is
+  unrelated to the pca9685_multiple serial-bridge workflow you've been testing
+  — it'll only "come out" if you run it directly. Let me know if you want that
+  older micro-ROS firmware path cleaned up/removed too, since it looks like
+  dead leftover code at this point.
+
+visual servoing
+Now I have the full picture: mearm_object_detection_node currently does its
+  own crude centroid→joint mapping internally and publishes directly to the
+  servo topics. I'll decouple this properly — add a flag to let the detection
+  node focus on perception only, and build a dedicated mearm_visual_servoing
+  package that subscribes to its /object_detection/detections output and
+  drives the arm with a cleaner, tunable closed-loop controller (deadband,
+  configurable gains/limits, home-on-lost). Starting with the new package
+  scaffold.
+  
+    Everything is clean and confirmed. Here's a summary of what's now in place:
+
+  New package: mearm_visual_servoing (in ~/ros2_ws/src/mearm_visual_servoing)
+  - mearm_visual_servoing_node.py — subscribes to /object_detection/detections
+    (and /object_detection/target_class) from your existing
+    mearm_object_detection node, and converts the tracked object's pixel
+    position/size into smoothed joint targets. It publishes:
+    - /arm_joint_commands → consumed by pca9685_multiple's servo_serial_bridge
+      to drive the real servos over serial
+    - /arm_controller/joint_trajectory and
+      /gripper_controller/joint_trajectory → so the simulated/RViz arm follows
+      along via ros2_control
+  - Tunable via config/mearm_visual_servoing_params.yaml: deadband (ignores
+    sub-pixel jitter), smoothing factor, confidence threshold, lost-object
+    timeout that eases the arm back to its home pose, and joint limits
+    matching your MeArm geometry.
+  - Launch with: ros2 launch mearm_visual_servoing mearm_visual_servoing.launch.py
+
+  Detection node change: mearm_object_detection_node previously computed joint
+  targets and drove the arm itself inline. I added an enable_builtin_servo
+  parameter (default false) that disables that inline control, so detection
+  now focuses purely on perception (publishing detections) while the new node
+  is the single source of truth driving the servos — avoiding two control
+  loops fighting over the same topics.
+
+  I verified the whole loop end-to-end: built both packages, confirmed the
+  fixed setup.cfg so ros2 run finds the executable, and injected a synthetic
+  detection — the arm's joint commands converged smoothly to the expected
+  target angle within ~2 seconds and returned to home when the (simulated)
+  object was no longer detected.
+
+  To run the full stack together: launch mearm_object_detection (camera +
+  classifier), mearm_visual_servoing (this new controller), and
+  pca9685_multiple's servo_serial_bridge (serial link to the STM32).
+  
+    # 1. just the bridge, then drive it manually
+    ros2 run pca9685_multiples servo_serial_bridge --ros-args -p port:=/dev/ttyACM0
+        
+    # 2. Launch object detection (adjust camera_index to your webcam)
+    ros2 launch mearm_object_detection mearm_object_detection.launch.py camera_index:=4 or 5
+    
+    # 3. Launch the real hardware bringup (after the servo bridge is confirmed via your serial test)
+
+    ros2 launch mearm_visual_servoing mearm_visual_servoing.launch.py
+
+drift❯ give me python and c++ command to run all together mearm, servo, rviz and camera step by step
+.....❯ 
+
+
+  Here's the full step-by-step startup sequence for both the Python and C++
+  visual servoing stacks, based on the packages we've already built:
+
+  1. Bring up the arm + RViz (mock or real hardware)
+    ros2 launch mearm_description display.launch.py use_mock_hardware:=false serial_port:=/dev/ttyACM0 or ttyACM1 start_rviz:=true
+
+  2. Start the serial bridge to the servos (PCA9685 over STM32)
+    ros2 run pca9685_multiple servo_serial_bridge --ros-args -p port:=/dev/ttyACM0 or ttyACM1
+
+  3. Start the camera/object detection node
+    ros2 launch mearm_object_detection mearm_object_detection.launch.py camera_index:=4 or 5
+
+  4a. Run the Python visual servoing node
+    ros2 run mearm_visual_servoing mearm_visual_servoing_node
+
+  4b. OR run the C++ visual servoing node (don't run both at once — they
+  publish to the same topics)
+    ros2 run mearm_visual_servoing_cpp mearm_visual_servoing_cpp_node
+
+  Run these in separate terminals in that order (RViz/description first, then
+  serial bridge, then camera/detection, then whichever servoing node you want
+  to test). If you want me to actually launch and verify this chain live, just
+  say the word and I'll run it and check the topics/TF for you.
+  
+   Summary of what was wrong and what I fixed:
+
+  1. "file not found" on ros2 run mearm_visual_servoing_cpp
+     mearm_visual_servoing_node: that executable name doesn't exist. CMake
+     builds it as mearm_visual_servoing_cpp_node (the ${PROJECT_NAME}_node
+     pattern). The node you saw as /mearm_visual_servoing_node in ros2 node
+     list is this same executable already running via the launch file, which
+     remaps its node *name* (not its executable name) to
+     mearm_visual_servoing_node so it matches the Python version's topics.
+     Going forward, run it either as:
+       ros2 run mearm_visual_servoing_cpp mearm_visual_servoing_cpp_node
+  or just use the launch file as you've been doing — don't run both ways at
+  once.
+
+  2. Servo swinging back and forth too fast: the controller was reacting to
+     normal camera/detection jitter — the deadband that's supposed to ignore
+     sub-pixel noise was only 4 pixels on a 640×480 image (way too tight), and
+     the smoothing filter (smoothing_alpha=0.25) responded quickly to every
+     small wobble in the detected bounding box. I widened the deadband to 14px
+     and slowed the smoothing to 0.1, which gives a visibly steadier,
+     slower-converging motion that won't chase detector noise. Applied live
+     and saved to disk in both the C++ and Python config YAMLs for future
+     runs.
+
+  If the oscillation is still visible once you have a live camera feed again,
+  the next thing to check would be the detection confidence/stability itself
+  (is the bounding box jumping between two different object candidates rather
+  than just jittering on one) — that's a detection-side fix rather than a
+  servoing-tuning one.
+
+

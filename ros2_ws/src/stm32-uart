@@ -1,0 +1,61 @@
+To set up a UART connection on the STM32F429ZI (such as on a Nucleo-144 board) using STM32CubeIDE, use the onboard ST-LINK Virtual COM Port (tied to USART3 or USART2 depending on board routing) or configure a custom USART/UART instance.
+
+1. Hardware Connection
+
+• Onboard USB (Virtual COM Port): The STM32F429ZI Nucleo board routes USART3 (PD8 for TX, PD9 for RX) or USART2 (PA2 for TX, PA3 for RX) to the onboard ST-LINK debugger, which bridges directly to your PC via USB.
+• External UART / USB-to-TTL Converter: If using an external module, cross-connect the pins:
+	• Connect MCU TX to Adapter RX.
+	• Connect MCU RX to Adapter TX.
+	• Share a common GND between both devices.
+
+2. CubeMX / CubeIDE Configuration
+
+1. Open your project's .ioc file in STM32CubeIDE.
+2. In the Pinout & Configuration tab, expand Connectivity.
+3. Select your USART instance (e.g., USART3 or USART2).
+4. Set the Mode to Asynchronous.
+5. Verify and adjust the Parameter Settings:
+	• Baud Rate: 115200 bits/sec (or 9600 depending on your terminal preference)
+	• Word Length: 8 Bits (7 data bits + 1 parity, or standard 8 data bits)
+	• Parity: None
+	• Stop Bits: 1
+	• Direction: Transmit and Receive
+6. (Optional) In the NVIC Settings tab, check the box for USART global interrupt if you plan to use interrupt-driven or DMA communication.
+7. Press Ctrl + S to save and let CubeIDE generate the initialization code.
+
+3. Writing the Code (main.c)
+
+Add transmission or reception code inside your main.c file using the HAL library:
+
+Transmitting a String (Polling Mode)
+
+c
+/* USER CODE BEGIN Includes */
+#include <string.h>
+/* USER CODE END Includes */
+
+// Inside main() after initialization:
+char msg[] = "Hello STM32F429ZI UART!\r\n";
+
+while (1)
+{
+  HAL_UART_Transmit(&huart3, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+  HAL_Delay(1000);
+}
+Use code with caution.
+
+Receiving Data
+
+c
+uint8_t rxData;
+
+// To receive a single byte:
+HAL_UART_Receive(&huart3, &rxData, 1, HAL_MAX_DELAY);
+Use code with caution.
+
+4. Testing on Your Computer
+
+1. Connect the USB cable from the board to your PC.
+2. Open a serial terminal program (such as PuTTY, Tera Term, or the built-in serial monitor in STM32CubeIDE).
+3. Select the correct COM port assigned to the ST-LINK Virtual COM Port and match the baud rate (e.g., 115200).
+Would you like help setting up UART interrupts, DMA transfer, or redirecting printf() to work over the serial port?
