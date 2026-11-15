@@ -1,0 +1,50 @@
+Python
+
+cd solar-hunter/scripts/
+
+  - scripts/01_serial_bridge.sh – /dev/ttyACM0 serial bridge with S-curve
+    smoothing
+  - scripts/02_description_rviz.sh – robot description + RViz (real hardware,
+    not mock)
+  - scripts/03_object_detection.sh – camera-index-5 object detection
+  - scripts/04_visual_servoing.sh – C++ visual servoing node with S-curve
+    smoothing
+  - scripts/run_all.sh – launches all four in separate xterm windows (since
+    this machine has xterm but no tmux/gnome-terminal), with
+    SERIAL_PORT/CAMERA_INDEX overridable via env vars
+  - scripts/stop_all.sh – kills all four by process name
+  
+C++
+cd solar_hunter_cpp/scripts/
+
+  - scripts/01_serial_bridge.sh – /dev/ttyACM0 serial bridge with S-curve
+    smoothing
+  - scripts/02_description_rviz.sh – robot description + RViz (real hardware,
+    not mock)
+  - scripts/03_object_detection.sh – camera-index-5 object detection
+  - scripts/04_visual_servoing.sh – C++ visual servoing node with S-curve
+    smoothing
+  - scripts/run_all.sh – launches all four in separate xterm windows (since
+    this machine has xterm but no tmux/gnome-terminal), with
+    SERIAL_PORT/CAMERA_INDEX overridable via env vars
+  - scripts/stop_all.sh – kills all four by process name
+  
+
+Note camera
+# Default now uses the working index 4:
+./scripts/03_object_detection.sh
+
+# Or override if your camera is on a different index:-run this first
+CAMERA_INDEX=4 ./scripts/03_object_detection.sh
+
+# See what video devices exist:
+v4l2-ctl --list-devices
+
+# After launching, confirm the node is up:
+ros2 node list | grep object_detection
+
+Also mearm model can get from 
+https://github.com/kubasikora/mearm_model
+https://github.com/atharvap8/4dof_arm
+https://github.com/a-ture/MeArm-Robot
+
