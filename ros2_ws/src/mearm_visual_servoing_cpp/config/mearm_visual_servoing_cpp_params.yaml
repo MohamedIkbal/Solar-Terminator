@@ -1,0 +1,34 @@
+# Configuration parameters for mearm_visual_servoing_cpp_node
+# Mirrors mearm_visual_servoing/config/mearm_visual_servoing_params.yaml so
+# the C++ and Python nodes behave identically and can be swapped freely.
+mearm_visual_servoing_node:
+  ros__parameters:
+    image_width: 640
+    image_height: 480
+    min_object_area: 400.0
+    max_object_area: 150000.0
+    min_confidence: 0.5
+    smoothing_alpha: 0.10
+    # S-curve (cubic smootherstep) smoothing — replaces EMA when enabled.
+    # Each joint move follows 6t^5 − 15t^4 + 10t^3 with zero velocity at
+    # both ends, so servos accelerate and decelerate gently.
+    use_scurve_smoothing: true
+    scurve_duration_s: 0.4          # seconds for each S-curve move
+    scurve_min_delta_rad: 0.01      # only re-target if target changed > this (rad)
+    deadband_px: 14.0
+    object_lost_timeout_ms: 800
+    control_rate_hz: 20.0
+    # Hard cap on commanded joint speed (rad/s), applied on top of the EMA
+    # smoothing above. Prevents a large setpoint jump (object re-acquired,
+    # or switching between tracking and home pose) from swinging the arm
+    # faster than a real MeArm servo can move smoothly. Lower = slower/safer.
+    max_joint_speed_rad_s: 0.1
+    joint0_min: -1.2
+    joint0_max: 1.2
+    joint1_min: -1.57
+    joint1_max: 1.0
+    joint2_min: 0.0
+    joint2_max: 1.57
+    joint3_min: 0.0
+    joint3_max: 0.42
+    joint3_tracking: 0.0

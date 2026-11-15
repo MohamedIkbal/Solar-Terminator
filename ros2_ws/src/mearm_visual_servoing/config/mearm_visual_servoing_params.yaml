@@ -1,0 +1,41 @@
+# Configuration parameters for mearm_visual_servoing_node
+#
+# These mirror the geometry/area constants used by mearm_object_detection's
+# classifier node so the two stay consistent; keep frame_width/frame_height
+# and min/max_object_area equal to the values in
+# mearm_object_detection/config/mearm_object_detection_params.yaml.
+mearm_visual_servoing_node:
+  ros__parameters:
+    image_width: 640
+    image_height: 480
+    min_object_area: 400.0
+    max_object_area: 150000.0
+    # Detections below this score are ignored (same semantics as
+    # mearm_object_detection's unknown_confidence_threshold).
+    min_confidence: 0.5
+    # Exponential smoothing factor applied to joint targets each control
+    # tick; lower = smoother/slower, higher = snappier/more jittery.
+    smoothing_alpha: 0.1
+    # Ignore target motion smaller than this many pixels to avoid hunting
+    # on a stationary object.
+    deadband_px: 14.0
+    # If no accepted detection has arrived within this many milliseconds,
+    # ease the arm back to its home pose.
+    object_lost_timeout_ms: 800
+    # Rate at which smoothed joint targets are recomputed and published.
+    control_rate_hz: 20.0
+    # Hard cap on commanded joint speed (rad/s), applied on top of the EMA
+    # smoothing above. Prevents a large setpoint jump (object re-acquired,
+    # or switching between tracking and home pose) from swinging the arm
+    # faster than a real MeArm servo can move smoothly. Lower = slower/safer.
+    max_joint_speed_rad_s: 1.0
+    joint0_min: -1.2
+    joint0_max: 1.2
+    joint1_min: -1.57
+    joint1_max: 1.0
+    joint2_min: 0.0
+    joint2_max: 1.57
+    joint3_min: 0.0
+    joint3_max: 0.42
+    # Gripper position to hold while actively tracking a target.
+    joint3_tracking: 0.0

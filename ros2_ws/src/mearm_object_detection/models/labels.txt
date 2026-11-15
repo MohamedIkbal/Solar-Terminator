@@ -1,0 +1,5 @@
+space_debris
+meteor
+locust
+solar_sail
+moon_south_darkside

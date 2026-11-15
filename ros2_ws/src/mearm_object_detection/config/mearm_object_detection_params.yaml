@@ -1,0 +1,43 @@
+# Configuration parameters for mearm_object_detection_node
+mearm_object_detection_node:
+  ros__parameters:
+    camera_index: 4  # USB camera index for the RGB camera feeding the arm.
+                     # Confirmed via `v4l2-ctl --device=/dev/videoN --all`:
+                     # video4 is the real YUYV capture node; video5 is a
+                     # metadata-only node (UVC payload header) and cannot
+                     # be opened for capture -- re-check with that command
+                     # if the device re-enumerates again.
+    frame_width: 640
+    frame_height: 480
+    publish_rate_hz: 10.0
+    # model_path / labels_path are filled in by the launch file from this
+    # package's share/models directory; override here only to point at a
+    # different (e.g. retrained) model.
+    min_object_area: 800.0
+    max_object_area: 100000.0
+    # Random-initialized placeholder weights produce near-uniform scores;
+    # raise this once the classifier is retrained on real imagery of the
+    # five target classes so low-confidence guesses stop driving the arm.
+    min_confidence: 0.5
+    # Below this softmax score the detected object is reported as
+    # "unknown" and the arm returns to its original resting pose instead
+    # of aiming at it.
+    unknown_confidence_threshold: 0.6
+    smoothing_alpha: 0.2
+    show_debug_windows: true
+    mirror_camera: false
+    enable_builtin_servo: false
+    object_lost_timeout_ms: 800
+    canny_threshold1: 50
+    canny_threshold2: 150
+    # Unknown-class crops are written here, separate from the labeled
+    # training_images/<class> folders, so they can be reviewed later and
+    # sorted into a real class (or used as extra "unknown" negatives) for
+    # retraining. Leave empty to disable saving.
+    unknown_image_dir: "/home/ikbal/ros2_ws/src/mearm_object_detection/training_images/unknown"
+    unknown_image_save_interval_ms: 1500
+    # Leave false when running the mearm_visual_servoing node, which is now
+    # the one subscribing to /object_detection/detections and driving the
+    # servos/joint controllers. Set true only to revert to this node's own
+    # inline centroid-to-joint control (no mearm_visual_servoing running).
+    enable_builtin_servo: false
