@@ -1,0 +1,18 @@
+To launch everything from a clean start
+
+    # 1. Gazebo + robot + controllers (MeArm world, controller_manager, bridges)
+    source /opt/ros/lyrical/setup.bash
+    source ~/ros2_ws/install/setup.bash
+    ros2 launch mearm_description gazebo.launch.py
+    
+    # 2. In a second terminal — hand tracking + arm control
+    source /opt/ros/lyrical/setup.bash
+    source ~/ros2_ws/install/setup.bash
+    ros2 launch mearm_hand_tracking mearm_hand_tracking.launch.py
+
+  Both are already running right now from this session, so you can just move
+  your hand in front of the camera and watch the arm in Gazebo follow it. If
+  you ever need to relaunch from scratch, those two commands (in order, giving
+  Gazebo a few seconds to come up before the second one) are all you need.
+
+set Hmax,Smax,Vmax all to maximum setting

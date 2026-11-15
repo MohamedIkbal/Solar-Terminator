@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+  mearm_hardware.xml
+  =====================
+  pluginlib manifest: registers ArmSystemHardware as a ros2_control
+  hardware_interface::SystemInterface plugin.
+
+  This file is read by pluginlib at runtime to locate the shared library
+  and instantiate the correct class.  The library path attribute must
+  match the CMake target name (without lib prefix or .so suffix).
+
+  The plugin name "mearm_hardware/ArmSystemHardware" must match:
+    1. The PLUGINLIB_EXPORT_CLASS macro in arm_system_hardware.cpp
+    2. The <plugin> tag value in wrapper.urdf.xacro (ros2_control block)
+    3. The class namespace::name in arm_system_hardware.hpp
+-->
+<library path="mearm_hardware">
+  <class
+    name="mearm_hardware/ArmSystemHardware"
+    type="mearm_hardware::ArmSystemHardware"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control SystemInterface for the 4-DOF MeArm acrylic arm.
+      Talks to the STM32 directly over a serial port — no micro-ROS,
+      no XRCE agent. Writes "J&lt;n&gt; &lt;rad&gt;\n" joint commands and
+      reads back joint state lines on the same serial connection.
+    </description>
+  </class>
+</library>

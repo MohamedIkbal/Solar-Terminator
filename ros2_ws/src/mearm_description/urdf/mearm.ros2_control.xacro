@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <ros2_control name="mearm_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+
+    <!-- real controllable joints -->
+    <joint name="joint_0">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <!-- mimic joints (linkage followers): these are state-interface only because
+         the URDF's native <mimic> tag plus the physics engine's mimic constraint
+         handles their motion automatically; adding a command_interface here
+         conflicts with the auto-synthesized mimic behavior and is rejected by
+         controller_manager -->
+    <joint name="arm_0_support_mimic">
+      <param name="mimic">joint_1</param>
+      <param name="multiplier">1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="arm_0_connector_mimic">
+      <param name="mimic">joint_1</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_2_mimic_0a">
+      <param name="mimic">joint_2</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_2_mimic_0b">
+      <param name="mimic">joint_1</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_2_mimic_1">
+      <param name="mimic">joint_2</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="arm1_mimic_0">
+      <param name="mimic">joint_1</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="gripper_support_mimic">
+      <param name="mimic">joint_2</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="gripper_holder">
+      <param name="mimic">joint_2</param>
+      <param name="multiplier">1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint_3_mimic">
+      <param name="mimic">joint_3</param>
+      <param name="multiplier">-1</param>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find mearm_description)/config/mearm_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!--
+  package.xml — mearm_bringup
+  ===============================
+  Bringup package for the 4-DOF MeArm acrylic robotic arm.
+
+  Contents:
+    - Launch files for ros2_control bringup (mock and real hardware).
+    - Controller configuration (controllers.yaml).
+    - RViz display presets.
+    - Keyboard teleoperation script.
+
+  This package has no compiled code — it is a pure launch/config package
+  built with ament_cmake.
+-->
+<package format="3">
+  <name>mearm_bringup</name>
+  <version>0.1.0</version>
+  <description>
+    Launch files, controller configs, and RViz presets for the 4-DOF acrylic arm.
+    Provides bringup.launch.py for ros2_control with mock or real hardware, and
+    a keyboard_teleop script for manual joint control.
+  </description>
+  <maintainer email="atharvap8@todo.todo">atharvap8</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Runtime dependencies — packages that must be installed for launch -->
+  <exec_depend>mearm_description</exec_depend>        <!-- URDF model -->
+  <exec_depend>robot_state_publisher</exec_depend>        <!-- TF broadcaster -->
+  <exec_depend>joint_state_publisher_gui</exec_depend>    <!-- Slider GUI (display mode) -->
+  <exec_depend>rviz2</exec_depend>                        <!-- 3D visualisation -->
+  <exec_depend>xacro</exec_depend>                        <!-- URDF macro processor -->
+  <exec_depend>ros2_control</exec_depend>                 <!-- Controller manager core -->
+  <exec_depend>ros2_controllers</exec_depend>             <!-- Standard controllers -->
+  <exec_depend>controller_manager</exec_depend>           <!-- Controller manager node -->
+  <exec_depend>joint_state_broadcaster</exec_depend>      <!-- State → /joint_states -->
+  <exec_depend>joint_trajectory_controller</exec_depend>  <!-- Trajectory execution -->
+  <exec_depend>trajectory_msgs</exec_depend>              <!-- JointTrajectory messages -->
+  <exec_depend>rclpy</exec_depend>                        <!-- servo_serial_bridge node -->
+  <exec_depend>std_msgs</exec_depend>                      <!-- servo_serial_bridge node -->
+  <exec_depend>python3-serial</exec_depend>               <!-- servo_serial_bridge node -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

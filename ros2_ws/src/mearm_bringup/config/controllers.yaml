@@ -1,0 +1,74 @@
+# controllers.yaml
+# =================
+# Parameter file for the ros2_control controller_manager and its controllers.
+#
+# STRUCTURE (ros2_control v2.53+ on Humble):
+#
+#   1. controller_manager.ros__parameters:
+#      - update_rate
+#      - <name>.type          (tells CM what plugin class to load)
+#
+#   2. <name>.ros__parameters:
+#      - joints, command_interfaces, etc.
+#      (the controller's OWN runtime config)
+#
+# The spawner's --param-file flag searches for a TOP-LEVEL key matching
+# the controller name (e.g. "arm_controller:").  It then sets params_file
+# on the controller_manager, which loads those params into the controller
+# at configure time.
+#
+# Without the top-level "arm_controller:" key, the spawner finds nothing
+# and the controller starts with empty defaults → "joints parameter is empty".
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+arm_controller:
+  ros__parameters:
+    joints: [joint_0, joint_1, joint_2]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+    allow_nonzero_velocity_at_trajectory_end: false
+    # Tolerances: set trajectory to 0.0 to DISABLE trajectory tracking
+    # checks.  Servo arms without encoders can't track precisely —
+    # the position feedback is just the last command, so small timing
+    # differences cause tolerance violations and "holding position" errors.
+    constraints:
+      goal_time: 0.0
+      stopped_velocity_tolerance: 0.05
+      joint_0:
+        trajectory: 0.0
+        goal: 0.0
+      joint_1:
+        trajectory: 0.0
+        goal: 0.0
+      joint_2:
+        trajectory: 0.0
+        goal: 0.0
+
+gripper_controller:
+  ros__parameters:
+    joints: [joint_3]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+    allow_nonzero_velocity_at_trajectory_end: false
+    constraints:
+      goal_time: 0.0
+      stopped_velocity_tolerance: 0.05
+      joint_3:
+        trajectory: 0.0
+        goal: 0.0

@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<!--
+  wrapper.urdf.xacro
+  ===================
+  Thin wrapper around the upstream MeArm V0.4 URDF (robot.urdf).
+
+  Purpose:
+    1. Include the base robot model (links, joints, meshes) from robot.urdf.
+    2. Append a <ros2_control> block that declares hardware interfaces for
+       each controllable joint.
+
+  The use_mock_hardware xacro argument controls which hardware plugin is
+  loaded at runtime:
+    - true  (default):  mock_components/GenericSystem — no STM32 needed,
+            state loops back from commands.  Used for RViz testing.
+    - false:            mearm_hardware/ArmSystemHardware — the real topic-
+            based bridge that publishes to /arm_joint_commands and subscribes
+            to /stm32/joint_states.
+
+  Joint names (joint_0 through joint_3) must EXACTLY match:
+    - The <joint> tags in robot.urdf
+    - The joints list in controllers.yaml
+    - The JOINT_NAMES[] array in the STM32 firmware
+    - The JOINT_NAMES list in keyboard_teleop.py
+
+  Usage:
+    xacro wrapper.urdf.xacro use_mock_hardware:=true   # mock (default)
+    xacro wrapper.urdf.xacro use_mock_hardware:=false  # real hardware
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mearm_wrapper">
+
+  <!-- Xacro argument: toggle between mock and real hardware plugins -->
+  <xacro:arg name="use_mock_hardware" default="true"/>
+
+  <!-- Include the untouched base URDF from the original MeArm V0.4 author.
+       This file defines all links, joints, meshes, and mimic joints.
+       We do NOT modify it — our ros2_control declarations go below. -->
+  <xacro:include filename="$(find mearm_description)/urdf/robot.urdf" />
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ROS 2 Control Hardware Interface Declaration
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+       This block tells ros2_control which joints exist, what interfaces
+       they provide (command: position; state: position + velocity), and
+       which hardware plugin to load.
+
+       The controller_manager reads this at startup and creates the
+       resource_manager with these interfaces.  Controllers (like
+       joint_trajectory_controller) then claim the command interfaces
+       and read the state interfaces.
+  -->
+  <ros2_control name="mearm_system" type="system">
+    <hardware>
+      <!-- Mock hardware: loops commands back as state, no real servos -->
+      <xacro:if value="$(arg use_mock_hardware)">
+        <plugin>mock_components/GenericSystem</plugin>
+      </xacro:if>
+      <!-- Real hardware: direct serial link to the STM32 (no micro-ROS) -->
+      <xacro:unless value="$(arg use_mock_hardware)">
+        <plugin>mearm_hardware/ArmSystemHardware</plugin>
+        <param name="serial_port">/dev/ttyUSB0</param>
+        <param name="baud_rate">115200</param>
+        <param name="control_frequency">50</param>
+      </xacro:unless>
+    </hardware>
+
+    <!-- joint_0: base yaw (turret servo, GPIO 14)
+         Rotates the entire arm left/right.
+         Range: ±45° (±0.7853 rad) -->
+    <joint name="joint_0">
+      <command_interface name="position">
+        <param name="min">-1.2</param>
+        <param name="max">1.2</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <!-- joint_1: right servo (shoulder, GPIO 27)
+         Tilts the main arm forward/back.
+         Range: -90° to ~57° (-1.57 to 1.0 rad) -->
+    <joint name="joint_1">
+      <command_interface name="position">
+        <param name="min">-1.57</param>
+        <param name="max">1.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <!-- joint_2: left servo (elbow, GPIO 26)
+         Raises/lowers the forearm.
+         Range: 0° to 90° (0.0 to 1.57 rad) -->
+    <joint name="joint_2">
+      <command_interface name="position">
+        <param name="min">0.0</param>
+        <param name="max">1.57</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <!-- joint_3: gripper servo (GPIO 25)
+         Opens/closes the gripper fingers.
+         Range: 0° to 90° (0.0 to 1.57 rad) -->
+    <joint name="joint_3">
+      <command_interface name="position">
+        <param name="min">0.0</param>
+        <param name="max">1.57</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+  </ros2_control>
+
+</robot>

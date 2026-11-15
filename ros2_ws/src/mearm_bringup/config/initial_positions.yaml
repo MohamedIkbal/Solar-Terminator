@@ -1,0 +1,13 @@
+# initial_positions.yaml
+# =======================
+# Default joint positions for joint_state_publisher_gui at startup.
+# Puts the arm in a "ready" pose (arm spread out) instead of a
+# vertical stick (all joints at 0), making it immediately visible in RViz.
+#
+# Units: radians
+
+zeros:
+  joint_0: -0.050
+  joint_1: -0.459
+  joint_2: 0.653
+  joint_3: 0.475

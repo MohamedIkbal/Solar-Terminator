@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!--
+  package.xml — mearm_hardware
+  ================================
+  ros2_control hardware interface plugin for the 4-DOF MeArm arm.
+
+  This package builds a shared library that implements
+  hardware_interface::SystemInterface.  It talks to the STM32 directly
+  over a serial port — no micro-ROS, no XRCE agent. The plugin writes
+  "J<n> <rad>\n" joint commands out the serial line and reads back
+  joint state lines from the same connection.
+
+  The plugin is registered via pluginlib (see mearm_hardware.xml).
+-->
+<package format="3">
+  <name>mearm_hardware</name>
+  <version>0.1.0</version>
+  <description>
+    ros2_control SystemInterface hardware plugin for the 4-DOF acrylic MG90S arm.
+    Communicates with the STM32 directly over a serial port (no micro-ROS).
+  </description>
+  <maintainer email="atharvap8@todo.todo">atharvap8</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Build + runtime dependencies -->
+  <depend>rclcpp</depend>             <!-- ROS 2 C++ client library -->
+  <depend>hardware_interface</depend> <!-- ros2_control SystemInterface base -->
+  <depend>pluginlib</depend>          <!-- Dynamic plugin loading -->
+  <depend>std_msgs</depend>           <!-- Float64MultiArray for commands -->
+  <depend>sensor_msgs</depend>        <!-- JointState for state feedback -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

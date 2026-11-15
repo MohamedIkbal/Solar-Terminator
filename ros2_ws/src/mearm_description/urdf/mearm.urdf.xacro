@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!--
+  mearm.urdf.xacro
+  =================
+  Thin wrapper around the real MeArm V0.4 model (mearm_base.urdf, imported
+  from https://github.com/atharvap8/4dof_arm). We do NOT modify the base
+  model's links/joints/meshes here, only append the Gazebo ros2_control
+  hardware interface needed to simulate it.
+
+  Controllable joints (must match mearm_base.urdf and mearm_controllers.yaml):
+    joint_0 - base yaw (turret)
+    joint_1 - shoulder (right servo)
+    joint_2 - elbow (left servo)
+    joint_3 - gripper
+-->
+<robot name="mearm" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find mearm_description)/urdf/mearm_base.urdf"/>
+  <xacro:include filename="$(find mearm_description)/urdf/mearm.ros2_control.xacro"/>
+
+  <!-- The four-bar linkage approximation (joint_2's support/mimic chain:
+       arm_1_support_0/1a/1b) uses full collision meshes on thin bars that
+       pass close to the column/arm_0 bodies at their rest pose. Non-adjacent
+       links in that chain were penetrating and the resulting contact forces
+       pinned joint_2 at its lower limit regardless of commanded position or
+       torque. Disable robot-wide self-collision (model default) since this
+       is a kinematic mimic approximation, not a physical four-bar linkage
+       that needs self-contact. -->
+  <gazebo>
+    <self_collide>false</self_collide>
+  </gazebo>
+
+</robot>

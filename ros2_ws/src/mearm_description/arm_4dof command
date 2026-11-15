@@ -1,0 +1,26 @@
+ 1. Launch the simulation:
+    ros2 launch mearm_description gazebo.launch.py
+
+  2. Move the arm (publish a trajectory point to the arm controller — adjust
+  the three joint angles in radians as you like):
+    ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory \
+    "{joint_names: [joint_0, joint_1, joint_2], points: [{positions: [0.3, -0.3, 0.2], time_from_start: {sec: 2}}]}"
+
+  If you also want to open/close the gripper:
+ros2 topic pub --once /gripper_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '{joint_names: [joint_3], points: [{positions: [0.5], time_from_start: {sec: 5}}]}'
+
+    
+    
+     To view the running mearm in RViz right now:
+    ros2 run rviz2 rviz2 -d /home/ikbal/ros2_ws/src/mearm_description/rviz/mearm_display.rviz
+  This attaches to the live /robot_description and /tf from the Gazebo stack —
+  no sliders, just the real robot state.
+
+  If you instead want a standalone RViz-only preview (no Gazebo, with joint
+  sliders to manually pose the arm) — use the package's own display launch
+  file:
+    ros2 launch mearm_description display.launch.py
+  Don't run this one while Gazebo is already up, though — it starts its own
+  robot_state_publisher and joint_state_publisher_gui, which will collide with
+  the ones already running from the sim.
+
