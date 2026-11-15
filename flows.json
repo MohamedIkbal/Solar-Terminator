@@ -1,0 +1,338 @@
+[
+    {
+        "id": "flow1",
+        "type": "tab",
+        "label": "MeArm Target Selector",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "btn_debris",
+        "type": "ui_button",
+        "z": "flow1",
+        "name": "Btn Space Debris",
+        "group": "grp1",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "🛰️ Space Debris",
+        "tooltip": "Track space debris",
+        "color": "",
+        "bgcolor": "#607d8b",
+        "className": "",
+        "icon": "",
+        "payload": "space_debris",
+        "payloadType": "str",
+        "topic": "target_class",
+        "topicType": "str",
+        "x": 180,
+        "y": 100,
+        "wires": [
+            [
+                "route1"
+            ]
+        ]
+    },
+    {
+        "id": "btn_meteor",
+        "type": "ui_button",
+        "z": "flow1",
+        "name": "Btn Meteor",
+        "group": "grp1",
+        "order": 2,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "☄️ Meteor",
+        "tooltip": "Track meteor",
+        "color": "",
+        "bgcolor": "#ff7043",
+        "className": "",
+        "icon": "",
+        "payload": "meteor",
+        "payloadType": "str",
+        "topic": "target_class",
+        "topicType": "str",
+        "x": 180,
+        "y": 140,
+        "wires": [
+            [
+                "route1"
+            ]
+        ]
+    },
+    {
+        "id": "btn_locust",
+        "type": "ui_button",
+        "z": "flow1",
+        "name": "Btn Locust",
+        "group": "grp1",
+        "order": 3,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "🦗 Locust",
+        "tooltip": "Track locust",
+        "color": "",
+        "bgcolor": "#558b2f",
+        "className": "",
+        "icon": "",
+        "payload": "locust",
+        "payloadType": "str",
+        "topic": "target_class",
+        "topicType": "str",
+        "x": 180,
+        "y": 180,
+        "wires": [
+            [
+                "route1"
+            ]
+        ]
+    },
+    {
+        "id": "btn_sail",
+        "type": "ui_button",
+        "z": "flow1",
+        "name": "Btn Solar Sail",
+        "group": "grp1",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "⛵ Solar Sail",
+        "tooltip": "Track solar sail",
+        "color": "",
+        "bgcolor": "#f9a825",
+        "className": "",
+        "icon": "",
+        "payload": "solar_sail",
+        "payloadType": "str",
+        "topic": "target_class",
+        "topicType": "str",
+        "x": 180,
+        "y": 220,
+        "wires": [
+            [
+                "route1"
+            ]
+        ]
+    },
+    {
+        "id": "btn_moon",
+        "type": "ui_button",
+        "z": "flow1",
+        "name": "Btn Moon Darkside",
+        "group": "grp1",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "🌑 S. Darkside of Moon",
+        "tooltip": "Track south darkside of the moon",
+        "color": "",
+        "bgcolor": "#37474f",
+        "className": "",
+        "icon": "",
+        "payload": "moon_south_darkside",
+        "payloadType": "str",
+        "topic": "target_class",
+        "topicType": "str",
+        "x": 200,
+        "y": 260,
+        "wires": [
+            [
+                "route1"
+            ]
+        ]
+    },
+    {
+        "id": "route1",
+        "type": "function",
+        "z": "flow1",
+        "name": "build ros2 pub command",
+        "func": "const cls = msg.payload;\n// Remember the selected class and reset the running count so the\n// dashboard counter tracks ONLY the currently selected object.\nflow.set('target_class', cls);\nflow.set('detection_count', 0);\nconst cmd = \"bash -c \\\"source /opt/ros/lyrical/setup.bash && source /home/ikbal/ros2_ws/install/setup.bash && ros2 topic pub --once /object_detection/target_class std_msgs/msg/String '{data: \" + cls + \"}'\\\"\";\nreturn [ {payload: cmd}, {payload: 'Tracking: ' + cls}, {payload: 0} ];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 180,
+        "wires": [
+            [
+                "exec1"
+            ],
+            [
+                "txt1"
+            ],
+            [
+                "txt_count"
+            ]
+        ]
+    },
+    {
+        "id": "exec1",
+        "type": "exec",
+        "z": "flow1",
+        "command": "",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "publish target_class",
+        "x": 680,
+        "y": 160,
+        "wires": [
+            [
+                "dbg1"
+            ],
+            [
+                "dbg1"
+            ],
+            [
+                "dbg1"
+            ]
+        ]
+    },
+    {
+        "id": "txt1",
+        "type": "ui_text",
+        "z": "flow1",
+        "group": "grp1",
+        "order": 6,
+        "width": "6",
+        "height": "1",
+        "name": "Status Text",
+        "label": "Current Target:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 680,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "dbg1",
+        "type": "debug",
+        "z": "flow1",
+        "name": "ros2 pub result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "inject_start",
+        "type": "inject",
+        "z": "flow1",
+        "name": "start detection stream (on deploy)",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 1,
+        "topic": "",
+        "x": 180,
+        "y": 340,
+        "wires": [
+            [
+                "exec_detections"
+            ]
+        ]
+    },
+    {
+        "id": "exec_detections",
+        "type": "exec",
+        "z": "flow1",
+        "command": "bash -c \"source /opt/ros/lyrical/setup.bash && source /home/ikbal/ros2_ws/install/setup.bash && until ros2 topic echo /object_detection/detections --field id vision_msgs/msg/Detection2D; do sleep 2; done\"",
+        "addpay": false,
+        "append": "",
+        "useSpawn": "true",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "stream /object_detection/detections",
+        "x": 480,
+        "y": 340,
+        "wires": [
+            [
+                "fn_count"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "fn_count",
+        "type": "function",
+        "z": "flow1",
+        "name": "count match for selected class",
+        "func": "const text = (msg.payload || \"\").toString();\nconst target = flow.get(\"target_class\") || \"\";\nif (!target) { return null; }\n// stdout from the exec node is NOT guaranteed to arrive one-line-per-chunk;\n// split defensively and count every matching line in the chunk, so a bundled\n// chunk (e.g. \"solar_sail\\n---\") never silently loses a match.\nlet count = flow.get(\"detection_count\") || 0;\nlet matched = false;\nconst lines = text.split(/\\r?\\n/);\nfor (const raw of lines) {\n    const line = raw.trim();\n    if (!line || line === \"---\") { continue; }\n    if (line === target) {\n        count += 1;\n        matched = true;\n    }\n}\nif (!matched) { return null; }\nflow.set(\"detection_count\", count);\nreturn {payload: count};\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 320,
+        "wires": [
+            [
+                "txt_count"
+            ]
+        ]
+    },
+    {
+        "id": "txt_count",
+        "type": "ui_text",
+        "z": "flow1",
+        "group": "grp1",
+        "order": 7,
+        "width": "6",
+        "height": "1",
+        "name": "Detection Count",
+        "label": "Detections (selected class):",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 1000,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "grp1",
+        "type": "ui_group",
+        "name": "Select Target To Track",
+        "tab": "tab1",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "tab1",
+        "type": "ui_tab",
+        "name": "Space Object Tracker",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "301624c9135edf0a",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
