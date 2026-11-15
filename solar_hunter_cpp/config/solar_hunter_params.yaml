@@ -1,0 +1,11 @@
+# solar_hunter_cpp parameters
+solar_hunter:
+  ros__parameters:
+    target: "meteors"
+    camera_index: 4
+    pan_joint_index: 0
+    tilt_joint_index: 1
+    num_joints: 4
+    publish_rate_hz: 10.0
+    show_debug_windows: true
+    mirror_camera: false
